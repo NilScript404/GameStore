@@ -22,7 +22,14 @@ typedef struct
     int SellPrice;
 } SellInfo;
 
-// Flags
+typedef struct
+{
+    char name[50];
+    int price;
+    int stock;
+    char ImgPath[50];
+} Game_Save;
+
 Game *Games = NULL;
 int GamesSize = 10;
 char **ImgPathes;
@@ -34,8 +41,6 @@ int DBCount = 0;
 int TotalImg = 0;
 int PathCount = 0;
 int ImageIndex = 0;
-// int ImageResizeHeight = 298;
-// int ImageResizeWidth = 598;
 int RenderCount = 0;
 int RenderRow = 0;
 int RenderLastRow = 0;
@@ -66,7 +71,8 @@ bool LoadDbEditFlag = false;
 char DBLoadBuffer[50] = {0};
 char *DBLoadLabeled = "DB has been loaded";
 int SaveImage = 0;
-
+Game SearchedGames[10] = {0};
+int TotalFoundGames = 0;
 char SavePath[512] = {0};
 
 char CreatedLabel[50] = "DB Created Successfully";
@@ -107,7 +113,6 @@ void Game_initializer();
 void Game_Adder(Game game);
 void Game_Remover(int index);
 int Game_IndexFinder(Game game);
-void Game_Operations(char operation, Game game);
 void add_path(char **pathes, char *path, char *pathName);
 void Retrieve_FileNames(char ***PathArray, char *path, char *Type);
 
@@ -122,28 +127,19 @@ void Game_Adder(Game game)
     RenderCount++;
     Games = (Game *)realloc(Games, GamesSize * sizeof(Game));
     Games[GamesSize - 1] = (Game){0};
-    if (Games == NULL)
-    {
-        // handle the error => realloc returns NULL once it fails => it won't affect the
-        // original memory
-    }
     Games[(GamesSize - 1) - 10] = game;
 }
 
 void Game_Remover(int index)
 {
-    // int index= Game_IndexFinder(game);
     if (index == -1)
     {
-        // game not found => handle it with a gui or some other method later on
         ShowNotFound = true;
     }
-    
     for (int i = index; i < GamesSize - 1; i++)
     {
         Games[i] = Games[i + 1];
     }
-    
     GamesSize--;
     Games = (Game *)realloc(Games, GamesSize * sizeof(Game));
     if (Games == NULL)
@@ -153,6 +149,7 @@ void Game_Remover(int index)
     }
     RenderCount--;
 }
+
 int Game_IndexFinder(Game game)
 {
     for (int i = 0; i < RenderCount; i++)
@@ -162,28 +159,8 @@ int Game_IndexFinder(Game game)
             return i;
         }
     }
-    
     return -1;
 }
-
-void Game_Operations(char operation, Game game)
-{
-    switch (operation)
-    {
-    case '+':
-        Game_Adder(game);
-        break;
-    case '-':
-        //  Game_Remover(game);
-        break;
-    default:
-        // handle it
-        break;
-    }
-}
-
-Game SearchedGames[10] = {0};
-int TotalFoundGames = 0;
 
 void Game_Search(char *SearchedWord)
 {
@@ -222,9 +199,10 @@ void Sale_FileHandler()
     Sale_File = fopen("Sale_Informations.txt", "a");
     if (Sale_File == NULL)
     {
-        // Handle error if file cannot be opened
+        printf("Sale_Information.txt Not Found");
     }
 }
+
 void Game_Sold(Game game, int SellCount)
 {
     int GameIndex = Game_IndexFinder(game);
@@ -459,24 +437,14 @@ void Create_DB(char *name)
     fwrite(Games, sizeof(Game), RenderCount, Games_DB);
     fclose(Games_DB);
 }
-typedef struct
-{
-    char name[50];
-    int price;
-    int stock;
-    char ImgPath[50];
-} Game_Save;
-// fread
-// reads by bytesize , so we gotta know the bytesize
-// lets say we have a struct that has a pointer to the string
-// we
+
 char ImagePathSave[50][256];
 void Create_DBTEST(char *name)
 {
     char FilePath[50] = {0};
     snprintf(FilePath, 50, "DB/%s.txt", name);
     FILE *Games_DB = fopen(FilePath, "wb");
-    
+     
     Game_Save *arr = (Game_Save *)calloc(RenderCount, sizeof(Game_Save));
     for (int i = 0; i < RenderCount; i++)
     {
@@ -488,6 +456,7 @@ void Create_DBTEST(char *name)
     fwrite(arr, sizeof(Game_Save), RenderCount, Games_DB);
     fclose(Games_DB);
 }
+
 void Load_DBTEST(char *name)
 {
     char FilePath[50];
@@ -498,7 +467,7 @@ void Load_DBTEST(char *name)
     int Game_DB_Size = ftell(Game_DB);
     rewind(Game_DB);
     int NewGameCount = Game_DB_Size / sizeof(Game_Save);
-    
+         
     RenderCount = NewGameCount;
     GamesSize = 10 + NewGameCount;
     
@@ -524,20 +493,18 @@ void Load_DBTEST(char *name)
 
 void Load_DB(char *name)
 {
-    
     char FilePath[50];
     snprintf(FilePath, 50, "DB/%s", name);
-    // free(temp);
     FILE *Game_DB = fopen(FilePath, "rb");
     
     fseek(Game_DB, 0, SEEK_END);
     int Game_DB_Size = ftell(Game_DB);
     rewind(Game_DB);
     int NewGamesCount = Game_DB_Size / sizeof(Game);
-    
+     
     RenderCount = NewGamesCount;
     GamesSize = 10 + NewGamesCount;
-    // wtf ?
+    
     if (Games != NULL)
     {
         free(Games);
@@ -547,29 +514,6 @@ void Load_DB(char *name)
     
     fread(Games, sizeof(Game), NewGamesCount, Game_DB);
     fclose(Game_DB);
-}
-
-void OrderByPrice()
-{
-    // {1 , 3 , 2 , 5 , 4}
-    int OrdereredByPrice[RenderCount] = {0};
-    for(int i = 0; i < RenderCount; i++)
-    {
-        for(int j = i + 1; j < RenderCount; j++)
-        {
-            
-        }
-    }
-}
-
-void OrderByStock()
-{
-
-}
-
-void OrderByName()
-{
-
 }
 
 void LoadCoverFirstState()
@@ -610,7 +554,7 @@ int main()
     FiraFont = LoadFontEx("FiraCode.ttf", 30, NULL, 0);
     GuiSetFont(FiraFont);
     GuiSetStyle(DEFAULT, TEXT_SIZE, 30);
-    
+     
     while (!WindowShouldClose())
     {
         Rectangle content = {0, 0, 900, (RenderCount / 2 + 1) * 445};
@@ -631,15 +575,13 @@ int main()
         {
             if (GuiButton((Rectangle){0, 250, 400, 50}, "CREATE"))
             {
-                // User Should be capable of choosing the name of DB
-                // Create_DB("DB.txt");
                 showCreateDBWindow = true;
             }
         }
         // DB LOAD
         if (LoadButtonState == true)
         {
-            if (GuiButton((Rectangle){0, 300, 400, 50}, "Load DB"))
+            if (GuiButton((Rectangle){0, 200, 400, 50}, "Load DB"))
             {
                 ShowDbLoadWindow = true;
             }
@@ -675,15 +617,10 @@ int main()
             {
                 UpdateEditFlag = !UpdateEditFlag;
             }
-            // TODO => do something about inputs leftovers , after we do the function , like
-            // updating / removing => whenever we search for a game , inputs must be empty again
             if (GuiButton((Rectangle){0, 485, 400, 50}, "Search"))
             {
                 ShowFound = false;
                 ShowNotFound = false;
-                // memset(NameUpdateBuffer, ' ', sizeof(NameAddBuffer));
-                // MemFree(PriceUpdateBuffer);
-                // MemFree(StockUpdateBuffer);
                 Game gameSearch = {0};
                 gameSearch.Name = SearchUpdateBuffer;
                 int index = Game_IndexFinder(gameSearch);
@@ -711,8 +648,6 @@ int main()
                 snprintf(UpdateLabel, sizeof(UpdateLabel), "Update %s", GameToUpdate.Name);
                 if (GuiButton((Rectangle){0, 715, 400, 50}, UpdateLabel))
                 {
-                    // Game_Remover(GameToRemove, Game_IndexFinder(GameToRemove));
-                    // Game_Update(GameToUpdate , Index);
                     Game_Updater(GameToUpdate, NameUpdateBuffer, PriceUpdateBuffer, StockUpdateBuffer);
                     ShowUpdateState = true;
                 }
@@ -939,6 +874,7 @@ int main()
                 showCreateDBWindow = false;
                 ShowDBCreationLabel = false;
             }
+             
             GuiLabel((Rectangle){5, 430, 75, 50}, "Name");
             if (GuiTextBox((Rectangle){85, 430, 310, 50}, DBNameBuffer, 50, DBNameEditFlag))
             {
@@ -946,7 +882,6 @@ int main()
             }
             if (GuiButton((Rectangle){0, 485, 400, 50}, "Create"))
             {
-                // Create_DB(DBNameBuffer);
                 Create_DBTEST(DBNameBuffer);
                 ShowDBCreationLabel = true;
             }
@@ -976,7 +911,6 @@ int main()
                 {
                     if (strcmp(DbPathes[i], DBLoadBuffer) == 0)
                     {
-                        // Load_DB(DBLoadBuffer);
                         Load_DBTEST(DBLoadBuffer);
                         DBLoadLabeled = "DB Loaded";
                         break;
@@ -1003,17 +937,7 @@ int main()
         }
         EndDrawing();
     }
-    
-    // UnloadTexture(ImgTexture);
+     
     CloseWindow();
     return 0;
 }
-// 3 - lots of error and input handling => find a good way to do it in an interactive
-//     and clean manner using raygui
-// 5 - a Graph that shows total Sale => Extra
-// 6 - ScrollPanel for Load DB
-// 7 - Window for Create DB => to specify the name
-// 8 - order of Game rendering => sort the array based on index . and not
-//     create a completely new array , for ex => PriceIndex[] = {3 , 4 , 1};
-//     then use Games[PriceIndex[i]] for rendering with proper order =>
-//     based on name , price , stock
