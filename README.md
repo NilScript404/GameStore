@@ -6,7 +6,7 @@ its going to handle basic funcionality of a game store app , the user will be ca
 its going to have an interactive user intertface , capable of doing what the average app does , and even more complicated things.
 this is done as a hobby , because i wanted to explore raylib and raygui using C and learning mroe about C itself.
 
-![App GUI](https://github.com/NilScript404/GameStore/blob/main/Capture.PNG)
+
 ![App GUI](https://github.com/NilScript404/GameStore/blob/main/Update.PNG)
 ![App GUI](https://github.com/NilScript404/GameStore/blob/main/Order.PNG)
 
